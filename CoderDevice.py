@@ -9,11 +9,11 @@ class Coder:
     def encode(self):
         nSamples = DataParams().nCodingData[self.type-1]
         matrixG = np.random.randn(sPrime, nSamples)
-        matrixW = np.diag(np.random.randn(nSamples))
-        print('>>', matrixG.shape, matrixW.shape)
+        # matrixW = np.diag(np.random.randn(nSamples))
+        # print('>>', matrixG.shape)
         sampleX, sampleY = self.sampleData()
-        codedX = np.dot(matrixG, np.dot(matrixW, sampleX))
-        codedY = np.dot(matrixG, np.dot(matrixW, sampleY))
+        codedX = np.dot(matrixG, sampleX)
+        codedY = np.dot(matrixG, sampleY)
         return codedX, codedY
     
     def sampleData(self):

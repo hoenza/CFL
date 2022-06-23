@@ -5,9 +5,9 @@ class DataGenerator:
         y = np.dot(X, DataParams().beta)
         y[y>=0] = 1
         y[y<False] = -1
-        print(X.shape, y.shape)
-        y = self.noiseData(y, deviceType, dataType)
-        print(X.shape, y.shape)
+        # print(X.shape, y.shape)
+        y = self.noiseData(y, deviceType, dataType-1)
+        # print(X.shape, y.shape)
         return X, y
     
     def noiseData(self, y, deviceType, dataType):

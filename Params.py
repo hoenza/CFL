@@ -1,7 +1,7 @@
 import numpy as np
 
 #Constants
-N = 20
+N = 10
 np.random.seed(8)
 
 pn = np.ones((1, N))/N
@@ -19,6 +19,8 @@ psi = 15
 # plt.plot(thetas[0])
 thetas = np.expand_dims(np.arange(0.6, 1, 0.02), axis=0) * 1000
 epsilons =  np.exp(-psi/thetas)
+trainerLocalSteps = np.squeeze((np.log(1/epsilons)*1000).astype(int))
+print('lStes', trainerLocalSteps.shape,  trainerLocalSteps)
 # plt.plot(epsilons[0])
 # print(epsilons.shape, epsilons[0])
 # plt.plot(thetas[0])
@@ -26,7 +28,7 @@ epsilons =  np.exp(-psi/thetas)
 cn = 5
 sn = 20
 capacitance = 2
-mu = 1
+mu =    1
 l = 1
 sPrime = 30
 gamma = 100000
