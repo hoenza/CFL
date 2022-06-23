@@ -2,7 +2,7 @@ from Params import *
 class DataGenerator:
     def generateData(self, deviceType, dataType):
         X = np.random.randn(DataParams().nData, DataParams().dataDimension)
-        y = np.dot(X, DataParams().beta)
+        y = np.dot(X, targetBeta)
         y[y>=0] = 1
         y[y<False] = -1
         # print(X.shape, y.shape)

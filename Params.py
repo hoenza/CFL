@@ -32,6 +32,8 @@ mu =    1
 l = 1
 sPrime = 30
 gamma = 100000
+dataDimension = 500
+targetBeta = np.random.randn(dataDimension, 1)
 
 class DataParams:
     def __init__(self):

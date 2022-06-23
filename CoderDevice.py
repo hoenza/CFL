@@ -14,6 +14,7 @@ class Coder:
         sampleX, sampleY = self.sampleData()
         codedX = np.dot(matrixG, sampleX)
         codedY = np.dot(matrixG, sampleY)
+        self.nData = codedX.shape[0]
         return codedX, codedY
     
     def sampleData(self):
