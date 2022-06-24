@@ -2,6 +2,9 @@ from Params import *
 from TrainerDevice import *
 from CoderDevice import *
 
+
+# sysType = 0 : Federated Mode Only
+# sysType = 1 : Federated & Coded Joint model
 class TaskPublisher:
     def __init__(self, sysType, nDevices):
         self.testDataX, self.testDataY = DataGenerator().generateData(1, N)
@@ -15,16 +18,16 @@ class TaskPublisher:
     def create_devices(self):
         for i in range(N):
             nn = np.floor(self.nDevices*pn[0, i]*qn[0, i]).astype(int)
-            # print(nn)
             federatedDevicesN = []
             for j in range(nn):
                 federatedDevicesN.append(Trainer(i+1))
             self.federatedDevices.append(federatedDevicesN)
-            nn = np.floor(self.nDevices*pn[0, i]*(1-qn[0, i])).astype(int)
-            coderDevicesN = []
-            for j in range(nn):
-                coderDevicesN.append(Coder(i+1))
-            self.coderDevices.append(coderDevicesN)
+            if self.sysType:
+                nn = np.floor(self.nDevices*pn[0, i]*(1-qn[0, i])).astype(int)
+                coderDevicesN = []
+                for j in range(nn):
+                    coderDevicesN.append(Coder(i+1))
+                self.coderDevices.append(coderDevicesN)
 
     def train(self, steps):
         for step in range(steps):
@@ -36,31 +39,28 @@ class TaskPublisher:
                 models0.append(modelsI)
 
             models1 = []
-            for dev in self.coderDevices:
-                modelsI = []
-                for devI in dev:
-                    eDataX, eDataY = devI.encode()
-                    modelsI.append(self.trainLocal(self.globalModel, eDataX, eDataY))
-                models1.append(modelsI)
+            if self.sysType:
+                for dev in self.coderDevices:
+                    modelsI = []
+                    for devI in dev:
+                        eDataX, eDataY = devI.encode()
+                        modelsI.append(self.trainLocal(self.globalModel, eDataX, eDataY))
+                    models1.append(modelsI)
             self.globalModel = self.joinModels(models0, models1)
             print('step:', step, 'loss:', self.loss(), 'acc:', self.accuracy())
     
     def joinModels(self, models0, models1):
-        # print('join')
         countData = 0
         modelsSum = np.zeros_like(self.globalModel)
         for t, i in enumerate(models0):
             for tt, j in enumerate(i):
-                # print(t, tt, self.federatedDevices[t][tt].nData)
                 modelsSum = modelsSum + self.federatedDevices[t][tt].nData * j
                 countData = countData + self.federatedDevices[t][tt].nData
-        # print('hoi')
-        for t, i in enumerate(models1):
-            for tt, j in enumerate(i):
-                # print(t, tt, self.coderDevices[t][tt].nData)
-                modelsSum = modelsSum + self.coderDevices[t][tt].nData * j
-                countData = countData + self.coderDevices[t][tt].nData
-        # print(countData)
+        if self.sysType:
+            for t, i in enumerate(models1):
+                for tt, j in enumerate(i):
+                    modelsSum = modelsSum + self.coderDevices[t][tt].nData * j
+                    countData = countData + self.coderDevices[t][tt].nData
         return modelsSum / countData
 
     def trainLocal(self, model, dataX, dataY):
@@ -77,4 +77,4 @@ class TaskPublisher:
         return np.sum(labels==self.testDataY)/self.testDataX.shape[0]
 
 
-TaskPublisher(0, 100).train(1000)
+TaskPublisher(1, 100).train(1000)
