@@ -25,8 +25,6 @@ class TaskPublisher:
             for j in range(nn):
                 coderDevicesN.append(Coder(i+1))
             self.coderDevices.append(coderDevicesN)
-        # print(self.federatedDevices)
-        # print(self.coderDevices)
 
     def train(self, steps):
         for step in range(steps):
@@ -44,14 +42,8 @@ class TaskPublisher:
                     eDataX, eDataY = devI.encode()
                     modelsI.append(self.trainLocal(self.globalModel, eDataX, eDataY))
                 models1.append(modelsI)
-            # print("models0", len(models0))
-            # for i in models0:
-            #     print(len(i))
-            # print("models1", len(models1))
-            # for i in models1:
-            #     print(len(i))
             self.globalModel = self.joinModels(models0, models1)
-            print('loss', self.loss())
+            print('step:', step, 'loss:', self.loss(), 'acc:', self.accuracy())
     
     def joinModels(self, models0, models1):
         # print('join')
@@ -63,12 +55,12 @@ class TaskPublisher:
                 modelsSum = modelsSum + self.federatedDevices[t][tt].nData * j
                 countData = countData + self.federatedDevices[t][tt].nData
         # print('hoi')
-        # for t, i in enumerate(models1):
-        #     for tt, j in enumerate(i):
-        #         # print(t, tt, self.coderDevices[t][tt].nData)
-        #         modelsSum = modelsSum + self.coderDevices[t][tt].nData * j
-        #         countData = countData + self.coderDevices[t][tt].nData
-        print(countData)
+        for t, i in enumerate(models1):
+            for tt, j in enumerate(i):
+                # print(t, tt, self.coderDevices[t][tt].nData)
+                modelsSum = modelsSum + self.coderDevices[t][tt].nData * j
+                countData = countData + self.coderDevices[t][tt].nData
+        # print(countData)
         return modelsSum / countData
 
     def trainLocal(self, model, dataX, dataY):
@@ -77,5 +69,12 @@ class TaskPublisher:
     def loss(self):
         diff = np.dot(self.testDataX, self.globalModel) - self.testDataY
         return np.dot(diff.T, diff).squeeze()
+    
+    def accuracy(self):
+        labels = np.dot(self.testDataX, self.globalModel)
+        labels[labels>=0] = 1
+        labels[labels<0] = -1
+        return np.sum(labels==self.testDataY)/self.testDataX.shape[0]
+
 
 TaskPublisher(0, 100).train(1000)
