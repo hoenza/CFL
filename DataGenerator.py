@@ -1,7 +1,7 @@
 from Params import *
 class DataGenerator:
     def generateData(self, deviceType, dataType):
-        X = np.random.randn(DataParams().nData, DataParams().dataDimension)
+        X = np.random.randn(nEdgeDeviceData, modelSize)
         y = np.dot(X, targetBeta)
         y[y>=0] = 1
         y[y<False] = -1
@@ -11,8 +11,8 @@ class DataGenerator:
         return X, y
     
     def noiseData(self, y, deviceType, dataType):
-        noiseRatio = DataParams().noiseRatio[deviceType, dataType]
-        nNoisyData = int(np.floor(noiseRatio * DataParams().nData))
+        noiseRatioN = noiseRatio[deviceType, dataType]
+        nNoisyData = int(np.floor(noiseRatioN * nEdgeDeviceData))
         for i in range(nNoisyData):
             if(y[-i]==1):
                 y[-i] = -1

@@ -7,8 +7,7 @@ class Coder:
         self.dataX, self.dataY = DataGenerator().generateData(1, type)
 
     def encode(self):
-        nSamples = DataParams().nCodingData[self.type-1]
-        matrixG = np.random.randn(sPrime, nSamples)
+        matrixG = np.random.randn(sPrime, nCodingData[self.type-1])
         sampleX, sampleY = self.sampleData()
         codedX = np.dot(matrixG, sampleX)
         codedY = np.dot(matrixG, sampleY)
@@ -16,8 +15,7 @@ class Coder:
         return codedX, codedY
     
     def sampleData(self):
-        nSamples = DataParams().nCodingData[self.type-1]
-        sampleIndices = np.random.choice(self.dataX.shape[0], nSamples)
+        sampleIndices = np.random.choice(self.dataX.shape[0], nCodingData[self.type-1])
         sampleX = self.dataX[sampleIndices]
         sampleY = self.dataY[sampleIndices]
         return sampleX, sampleY

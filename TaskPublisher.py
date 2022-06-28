@@ -4,7 +4,8 @@ from CoderDevice import *
 
 
 # sysType = 0 : Federated Mode Only
-# sysType = 1 : Federated & Coded Joint model
+# sysType = 1 : Coded Mode Only
+# sysType = 2 : Federated & Coded Joint model
 class TaskPublisher:
     def __init__(self, sysType, nDevices):
         self.testDataX, self.testDataY = DataGenerator().generateData(1, N)
@@ -13,7 +14,7 @@ class TaskPublisher:
         self.federatedDevices = []
         self.coderDevices = []
         self.create_devices()
-        self.globalModel = np.zeros((DataParams().dataDimension, 1))
+        self.globalModel = np.zeros((modelSize, 1))
     
     def create_devices(self):
         for i in range(N):
@@ -30,6 +31,7 @@ class TaskPublisher:
                 self.coderDevices.append(coderDevicesN)
 
     def train(self, steps):
+        report = {'losses':[], 'accs':[]}
         for step in range(steps):
             models0 = []
             for dev in self.federatedDevices:
@@ -46,29 +48,40 @@ class TaskPublisher:
                         eDataX, eDataY = devI.encode()
                         modelsI.append(self.trainLocal(self.globalModel, eDataX, eDataY))
                     models1.append(modelsI)
+            
             self.globalModel = self.joinModels(models0, models1)
             print('step:', step, 'loss:', self.loss(), 'acc:', self.accuracy())
+            report['losses'].append(self.loss())
+            report['accs'].append(self.accuracy())
+        return report
     
     def joinModels(self, models0, models1):
         countData = 0
         modelsSum = np.zeros_like(self.globalModel)
-        for t, i in enumerate(models0):
-            for tt, j in enumerate(i):
-                modelsSum = modelsSum + self.federatedDevices[t][tt].nData * j
-                countData = countData + self.federatedDevices[t][tt].nData
-        if self.sysType:
+        
+        if self.sysType != 1:
+            for t, i in enumerate(models0):
+                for tt, j in enumerate(i):
+                    modelsSum = modelsSum + self.federatedDevices[t][tt].nData * j
+                    countData = countData + self.federatedDevices[t][tt].nData
+        
+        if self.sysType != 0:
             for t, i in enumerate(models1):
                 for tt, j in enumerate(i):
                     modelsSum = modelsSum + self.coderDevices[t][tt].nData * j
                     countData = countData + self.coderDevices[t][tt].nData
+        
         return modelsSum / countData
 
     def trainLocal(self, model, dataX, dataY):
-        return model - (0.01*mu/sPrime) * np.dot(dataX.T, np.dot(dataX, model) - dataY)
+        modelP = np.copy(model)
+        for i in range(1):
+            modelP = modelP - (0.001*mu/sPrime) * np.dot(dataX.T, np.dot(dataX, modelP) - dataY)
+        return modelP
     
     def loss(self):
         diff = np.dot(self.testDataX, self.globalModel) - self.testDataY
-        return np.dot(diff.T, diff).squeeze()
+        return np.log(np.dot(diff.T, diff).squeeze())
     
     def accuracy(self):
         labels = np.dot(self.testDataX, self.globalModel)
@@ -76,5 +89,27 @@ class TaskPublisher:
         labels[labels<0] = -1
         return np.sum(labels==self.testDataY)/self.testDataX.shape[0]
 
+globalTrainingSteps = 100
+report0 = TaskPublisher(0, 100).train(globalTrainingSteps)
+report1 = TaskPublisher(1, 100).train(globalTrainingSteps)
+report2 = TaskPublisher(2, 100).train(globalTrainingSteps)
 
-TaskPublisher(1, 100).train(1000)
+
+plt.rcParams["figure.autolayout"] = True
+fig, axs = plt.subplots(2, 1)
+xAxis = list(range(1, globalTrainingSteps+1))
+
+axs[0].plot(xAxis, report0['losses'], label='Federated')
+axs[0].plot(xAxis, report1['losses'], label='Coded')
+axs[0].plot(xAxis, report2['losses'], label='Joint')
+axs[0].set_title('loss')
+axs[0].legend()
+
+axs[1].plot(xAxis, report0['accs'], label='Federated')
+axs[1].plot(xAxis, report1['accs'], label='Coded')
+axs[1].plot(xAxis, report2['accs'], label='Joint')
+axs[1].set_title('accuracy')
+axs[1].legend()
+
+plt.savefig('plot2.jpg')
+plt.savefig('plot2.eps')
