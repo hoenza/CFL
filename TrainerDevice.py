@@ -6,13 +6,13 @@ class Trainer:
     def __init__(self, type):
         self.type = type
         self.dataX, self.dataY = DataGenerator().generateData(0, type)
-        self.nData = self.dataX.shape[0]
         
     def train(self, model):
         modelP = np.copy(model)
         a = self.loss(modelP)
         for i in range(trainerLocalSteps[self.type-1]):
             sampleX, sampleY = self.sampleData()
+            self.nData = sampleX.shape[0]
             modelP = modelP - (0.001*mu/nEdgeDeviceData) * np.dot(sampleX.T, np.dot(sampleX, modelP) - sampleY)
         return modelP
     

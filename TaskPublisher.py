@@ -8,7 +8,7 @@ from CoderDevice import *
 # sysType = 2 : Federated & Coded Joint model
 class TaskPublisher:
     def __init__(self, sysType, nDevices):
-        self.testDataX, self.testDataY = DataGenerator().generateData(1, N)
+        self.testDataX, self.testDataY = DataGenerator().generateData(-1, N)
         self.sysType = sysType
         self.nDevices = nDevices
         self.federatedDevices = []

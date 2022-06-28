@@ -32,8 +32,8 @@ plt.savefig('plot1.jpg')
 plt.savefig('plot1.eps')
 
 sn = 20
-mu =    1
-sPrime = 30
+mu = 1
+sPrime = 20
 
 nEdgeDeviceData = 1000
 modelSize = 500

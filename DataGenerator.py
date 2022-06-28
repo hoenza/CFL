@@ -13,6 +13,8 @@ class DataGenerator:
     def noiseData(self, y, deviceType, dataType):
         noiseRatioN = noiseRatio[deviceType, dataType]
         nNoisyData = int(np.floor(noiseRatioN * nEdgeDeviceData))
+        if deviceType == -1:
+            nNoisyData = 0
         for i in range(nNoisyData):
             if(y[-i]==1):
                 y[-i] = -1
