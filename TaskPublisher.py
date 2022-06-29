@@ -1,14 +1,22 @@
 from Params import *
 from TrainerDevice import *
 from CoderDevice import *
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import pandas as pd
 
 
 # sysType = 0 : Federated Mode Only
 # sysType = 1 : Coded Mode Only
 # sysType = 2 : Federated & Coded Joint model
 class TaskPublisher:
-    def __init__(self, sysType, nDevices):
-        self.testDataX, self.testDataY = DataGenerator().generateData(-1, N)
+    def __init__(self, sysType, nDevices, data=None):
+        if data is None:
+            self.testDataX, self.testDataY = DataGenerator().generateData(-1, N)
+        else:
+            self.testDataX = data[0]
+            self.testDataY = data[1]
+        
         self.sysType = sysType
         self.nDevices = nDevices
         self.federatedDevices = []
@@ -50,9 +58,11 @@ class TaskPublisher:
                     models1.append(modelsI)
             
             self.globalModel = self.joinModels(models0, models1)
-            print('step:', step, 'loss:', self.loss(), 'acc:', self.accuracy())
             report['losses'].append(self.loss())
             report['accs'].append(self.accuracy())
+        
+        print('loss:', self.loss(), 'acc:', self.accuracy())
+        self.table()
         return report
     
     def joinModels(self, models0, models1):
@@ -83,16 +93,37 @@ class TaskPublisher:
         diff = np.dot(self.testDataX, self.globalModel) - self.testDataY
         return np.log(np.dot(diff.T, diff).squeeze())
     
-    def accuracy(self):
+    def label(self):
         labels = np.dot(self.testDataX, self.globalModel)
         labels[labels>=0] = 1
         labels[labels<0] = -1
+        self.labels = labels
+        return labels
+
+    def accuracy(self):
+        labels = self.label()
         return np.sum(labels==self.testDataY)/self.testDataX.shape[0]
+    
+    def table(self):
+        pred_labels = self.label()
+        truth_labels = self.testDataY
+        conf_mat = confusion_matrix(truth_labels, pred_labels)
+        return conf_mat
+
+    def plot_table(self, curAx):
+        conf_mat = self.table()
+        pdframe = pd.DataFrame(conf_mat, range(2), range(2))
+        sns.heatmap(pdframe, annot=True, ax=curAx, fmt='g')
+
 
 globalTrainingSteps = 100
-report0 = TaskPublisher(0, 100).train(globalTrainingSteps)
-report1 = TaskPublisher(1, 100).train(globalTrainingSteps)
-report2 = TaskPublisher(2, 100).train(globalTrainingSteps)
+taskPublisher0 = TaskPublisher(0, 100)
+data = [taskPublisher0.testDataX, taskPublisher0.testDataY]
+report0 = taskPublisher0.train(globalTrainingSteps)
+taskPublisher1 = TaskPublisher(1, 100, data)
+report1 = taskPublisher1.train(globalTrainingSteps)
+taskPublisher2 = TaskPublisher(2, 100, data)
+report2 = taskPublisher2.train(globalTrainingSteps)
 
 
 plt.rcParams["figure.autolayout"] = True
@@ -102,7 +133,7 @@ xAxis = list(range(1, globalTrainingSteps+1))
 axs[0].plot(xAxis, report0['losses'], label='Federated')
 axs[0].plot(xAxis, report1['losses'], label='Coded')
 axs[0].plot(xAxis, report2['losses'], label='Joint')
-axs[0].set_title('loss')
+axs[0].set_title('log(loss)')
 axs[0].legend()
 
 axs[1].plot(xAxis, report0['accs'], label='Federated')
@@ -113,3 +144,21 @@ axs[1].legend()
 
 plt.savefig('plot2.jpg')
 plt.savefig('plot2.eps')
+plt.close()
+
+plt.title('Confusion Matrix')
+plt.rcParams["figure.autolayout"] = True
+fig, axs = plt.subplots(1, 3)
+fig.set_size_inches(14, 4)
+
+taskPublisher0.plot_table(axs[0])
+axs[0].set_title('Federated')
+taskPublisher1.plot_table(axs[1])
+axs[1].set_title('Coded')
+taskPublisher2.plot_table(axs[2])
+axs[2].set_title('Joint')
+
+
+plt.savefig('plot3.jpg')
+plt.savefig('plot3.eps')
+plt.close()

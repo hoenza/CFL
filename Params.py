@@ -30,6 +30,7 @@ axs[1, 1].plot(xAxis, numOfCodingDatas)
 axs[1, 1].set_title('num of coding data')
 plt.savefig('plot1.jpg')
 plt.savefig('plot1.eps')
+plt.close()
 
 sn = 20
 mu = 1
